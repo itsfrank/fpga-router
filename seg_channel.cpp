@@ -75,7 +75,7 @@ void SegChannel::drawV()
 		float inner_offset = ((i + 1) * SegChannel::s_padding) + (i * SegChannel::s_width);
 		drawline(inner_offset + sq_x_offset, sq_y_offset, inner_offset + sq_x_offset, sq_y_offset + sq_width);
 		setcolor(BLACK);
-		drawtext(inner_offset + sq_x_offset, sq_y_offset + sq_width / 2, std::to_string(this->segments[i]->g_index).c_str(), INT_MAX);
+		//drawtext(inner_offset + sq_x_offset, sq_y_offset + sq_width / 2, std::to_string(this->segments[i]->g_index).c_str(), INT_MAX);
 	}
 }
 
@@ -111,6 +111,6 @@ void SegChannel::drawH()
 		float inner_offset = ((i + 1) * SegChannel::s_padding) + (i * SegChannel::s_width);
 		drawline(sq_x_offset, inner_offset + sq_y_offset, sq_x_offset + sq_width, inner_offset + sq_y_offset);
 		setcolor(BLACK);
-		drawtext(sq_x_offset + sq_width / 2, inner_offset + sq_y_offset, std::to_string(this->segments[i]->g_index).c_str(), INT_MAX);
+		//drawtext(sq_x_offset + sq_width / 2, inner_offset + sq_y_offset, std::to_string(this->segments[i]->g_index).c_str(), INT_MAX);
 	}
 }

@@ -131,6 +131,10 @@ vector<Switch*> router::GenerateSwitches(LogicBlock *** blocks, int dimension_si
 	return switches;
 }
 
+static void ConneectSegments(segment* s1, segment* s2) {
+
+}
+
 vector<vector<int>> router::InitializeGraph(vector<segment*> &segment_list, vector<Switch*> switches)
 {
 
@@ -156,17 +160,74 @@ vector<vector<int>> router::InitializeGraph(vector<segment*> &segment_list, vect
 			}
 		}
 
-
-		for (size_t i = 0; i < segments.size(); i++)
-		{
-			segment* seg_this = segments[i];
-			for (size_t j = i + 1; j < segments.size(); j++)
+		if (!Switch::WILTON) {
+			for (size_t i = 0; i < segments.size(); i++)
 			{
-				segment* seg_other = segments[j];
-				if (seg_this->parent == seg_other->parent) continue;
+				segment* seg_this = segments[i];
+				for (size_t j = i + 1; j < segments.size(); j++)
+				{
+					segment* seg_other = segments[j];
+					if (seg_this->parent == seg_other->parent) continue;
 
-				adjacency_vector[seg_this->g_index].push_back(seg_other->g_index);
-				adjacency_vector[seg_other->g_index].push_back(seg_this->g_index);
+					adjacency_vector[seg_this->g_index].push_back(seg_other->g_index);
+					adjacency_vector[seg_other->g_index].push_back(seg_this->g_index);
+				}
+			}
+		}
+		else {
+			if (sw->channels[Switch::UP] && sw->channels[Switch::DOWN]) {
+				for (size_t i = 0; i < SegChannel::NUM_SEGMENTS; i++) {
+					segment* seg_up = sw->channels[Switch::UP]->segments[i];
+					segment* seg_down = sw->channels[Switch::DOWN]->segments[i];
+
+					adjacency_vector[seg_up->g_index].push_back(seg_down->g_index);
+					adjacency_vector[seg_down->g_index].push_back(seg_up->g_index);
+				}
+			}
+			if (sw->channels[Switch::LEFT] && sw->channels[Switch::RIGHT]) {
+				for (size_t i = 0; i < SegChannel::NUM_SEGMENTS; i++) {
+					segment* seg_left = sw->channels[Switch::LEFT]->segments[i];
+					segment* seg_right = sw->channels[Switch::RIGHT]->segments[i];
+
+					adjacency_vector[seg_right->g_index].push_back(seg_left->g_index);
+					adjacency_vector[seg_left->g_index].push_back(seg_right->g_index);
+				}
+			}
+			if (sw->channels[Switch::LEFT] && sw->channels[Switch::UP]) {
+				for (size_t i = 0; i < SegChannel::NUM_SEGMENTS; i++) {
+					segment* seg_left = sw->channels[Switch::LEFT]->segments[i];
+					segment* seg_up = sw->channels[Switch::UP]->segments[(SegChannel::NUM_SEGMENTS - i) % SegChannel::NUM_SEGMENTS];
+
+					adjacency_vector[seg_up->g_index].push_back(seg_left->g_index);
+					adjacency_vector[seg_left->g_index].push_back(seg_up->g_index);
+				}
+			}
+			if (sw->channels[Switch::UP] && sw->channels[Switch::RIGHT]) {
+				for (size_t i = 0; i < SegChannel::NUM_SEGMENTS; i++) {
+					segment* seg_up = sw->channels[Switch::UP]->segments[i];
+					segment* seg_right = sw->channels[Switch::RIGHT]->segments[(i + 1) % SegChannel::NUM_SEGMENTS];
+
+					adjacency_vector[seg_right->g_index].push_back(seg_up->g_index);
+					adjacency_vector[seg_up->g_index].push_back(seg_right->g_index);
+				}
+			}
+			if (sw->channels[Switch::RIGHT] && sw->channels[Switch::DOWN]) {
+				for (size_t i = 0; i < SegChannel::NUM_SEGMENTS; i++) {
+					segment* seg_right = sw->channels[Switch::RIGHT]->segments[i];
+					segment* seg_down = sw->channels[Switch::DOWN]->segments[((2 * SegChannel::NUM_SEGMENTS) - 2 - i) % SegChannel::NUM_SEGMENTS];
+
+					adjacency_vector[seg_down->g_index].push_back(seg_right->g_index);
+					adjacency_vector[seg_right->g_index].push_back(seg_down->g_index);
+				}
+			}
+			if (sw->channels[Switch::DOWN] && sw->channels[Switch::LEFT]) {
+				for (size_t i = 0; i < SegChannel::NUM_SEGMENTS; i++) {
+					segment* seg_down = sw->channels[Switch::DOWN]->segments[i];
+					segment* seg_left = sw->channels[Switch::LEFT]->segments[(i + 1) % SegChannel::NUM_SEGMENTS];
+
+					adjacency_vector[seg_left->g_index].push_back(seg_down->g_index);
+					adjacency_vector[seg_down->g_index].push_back(seg_left->g_index);
+				}
 			}
 		}
 	}
@@ -185,14 +246,21 @@ int * router::InitializeSegmentLabels(int num_segments)
 	return segment_labels;
 }
 
-void router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_list, int * segment_labels, LogicBlock* start_block, int start_pin, LogicBlock* end_block, int end_pin, int net_id)
+bool router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_list, int * segment_labels, LogicBlock* start_block, int start_pin, LogicBlock* end_block, int end_pin, int net_id)
 {
+	bool success = true;
 
 	SegChannel* start_channel = start_block->channels[start_pin - 1];
 	SegChannel* end_channel = end_block->channels[end_pin - 1];
 
+	
+
+
 	queue<int> expansion_list;
 	vector<int> target_ids;
+
+	bool target_found = false;
+	int target_id;
 
 	for (auto seg : start_block->channels[start_pin - 1]->segments) {
 		if (segment_labels[seg->g_index] == router::UNAVAILABLE) continue;
@@ -202,12 +270,16 @@ void router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_li
 
 	for (auto seg : end_block->channels[end_pin - 1]->segments) {
 		if (segment_labels[seg->g_index] == router::UNAVAILABLE) continue;
+		if (segment_labels[seg->g_index] == 0) {
+			start_block->pin_nets[start_pin - 1] = net_id;
+			end_block->pin_nets[end_pin - 1] = net_id;
+			seg->net = net_id;
+			return success;
+		}
 		segment_labels[seg->g_index] = router::TARGET;
 		target_ids.push_back(seg->g_index);
 	}
 
-	bool target_found = false;
-	int target_id;
 
 	while (!expansion_list.empty() && !target_found)
 	{
@@ -224,7 +296,7 @@ void router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_li
 				break;
 			}
 
-			if (n_value > current_value) {
+			if (n_value > current_value + 1) {
 				segment_labels[neighbour] = current_value + 1;
 				expansion_list.push(neighbour);
 			}
@@ -232,25 +304,42 @@ void router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_li
 		}
 	}
 
-	int current_id = target_id;
 
 	if (target_found) {
+		start_block->pin_nets[start_pin - 1] = net_id;
+		end_block->pin_nets[end_pin - 1] = net_id;
+
+		int current_id = target_id;
 		while (segment_labels[current_id] > 0) {
 			segment* seg = seg_list[current_id];
 			seg->net = net_id;
 
+			int smallest_value = INT_MAX;
+			int smallest_id = -1;
+
 			for (auto neighbour : seg_adj_list[current_id]) {
-				if (segment_labels[neighbour] == router::UNAVAILABLE) continue;
+				if (segment_labels[neighbour] == router::UNAVAILABLE || segment_labels[neighbour] == router::AVAILABLE) continue;
 				if (segment_labels[neighbour] < segment_labels[current_id]) {
-					seg_list[current_id]->net = net_id;
-					current_id = neighbour;
-					break;
+					if (segment_labels[neighbour] < smallest_value) {
+						smallest_value = segment_labels[neighbour];
+						smallest_id = neighbour;
+					}
+					
 				}
 			}
+
+			if (smallest_id == -1) throw "DID NOT FIND ROUTABLE NEIGHBOUR";
+			seg_list[smallest_id]->net = net_id;
+			current_id = smallest_id;
 		}
 		seg_list[current_id]->net = net_id;
 	}
+	else {
+		printf("TARGET NOT FOUND FOR NET %d \n", net_id);
+		success = false;
+	}
 
+	return success;
 }
 
 void router::ResetLabels(vector<segment*> seg_list, int * segment_labels)

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <vector>
-
+#include <fstream>
 #include "router.h"
 #include "graphics.h"
 #include "logic_block.h"
@@ -28,10 +28,44 @@ static std::vector<vector<int>> seg_adj_list;
 static vector<segment*> seg_list;
 static int* segment_labels;
 
+struct net_t {
+	int lb1_x;
+	int lb1_y;
+	int lb1_pin;
+	int lb2_x;
+	int lb2_y;
+	int lb2_pin;
+};
+
+
 int main() {
 
-	int l_block_dim = 3;
-	int c_width = 3;
+	int l_block_dim;
+	int c_width;
+	vector<net_t> nets;
+
+	fstream file("../test-circuits/cc2");
+
+	string line;
+
+	file >> l_block_dim >> c_width;
+
+	while (!file.eof()) {
+		int lb1_x;
+		int lb1_y;
+		int lb1_pin;
+		int lb2_x;
+		int lb2_y;
+		int lb2_pin;
+
+		file >> lb1_x >> lb1_y >> lb1_pin >> lb2_x >> lb2_y >> lb2_pin;
+
+		if (lb1_x == -1) break;
+
+		nets.push_back({ lb1_x - 1, lb1_y - 1, lb1_pin, lb2_x - 1, lb2_y - 1, lb2_pin });
+	}
+
+	Switch::WILTON = true;
 
 	router::init(c_width);
 	blocks = router::InitializeObjects(l_block_dim);
@@ -40,9 +74,15 @@ int main() {
 	switch_list = router::GenerateSwitches(blocks, l_block_dim);
 	seg_adj_list = router::InitializeGraph(seg_list, switch_list);
 	segment_labels = router::InitializeSegmentLabels(seg_adj_list.size());
-	router::FindRoute(seg_adj_list, seg_list, segment_labels, blocks[0][0], 1, blocks[2][2], 1, 0);
-	router::ResetLabels(seg_list, segment_labels);
-	router::FindRoute(seg_adj_list, seg_list, segment_labels, blocks[0][0], 2, blocks[2][2], 1, 1);
+
+
+
+	for (int i = 0; i < nets.size(); i++) {
+		net_t net = nets[i];
+		router::FindRoute(seg_adj_list, seg_list, segment_labels, blocks[net.lb1_x][net.lb1_y], net.lb1_pin, blocks[net.lb2_x][net.lb2_y], net.lb2_pin, i);
+		router::ResetLabels(seg_list, segment_labels);
+	}
+
 	/* initialize display with WHITE background */
 
 	printf("About to start graphics.\n");
@@ -85,12 +125,13 @@ void drawscreen(void) {
 	setlinewidth(2);
 
 
-	for (auto block : block_list) {
-		block->draw();
-	}
 
 	for (auto channel : channel_list) {
 		channel->draw();
+	}
+
+	for (auto block : block_list) {
+		block->draw();
 	}
 
 	for (auto sw : switch_list) {

@@ -1,5 +1,6 @@
 #include "switch.h"
 
+bool Switch::WILTON = false;
 
 Switch::Switch(int x_index, int y_index, SegChannel* up, SegChannel* right, SegChannel* down, SegChannel* left)
 {

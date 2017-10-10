@@ -24,6 +24,7 @@ public:
 	int y_index;
 	SegChannel** channels;
 
+	int pin_nets[4] = { -1, -1, -1, -1 };
 
 	LogicBlock(int x_index, int y_index);
 

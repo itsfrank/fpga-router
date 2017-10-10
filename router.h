@@ -31,7 +31,7 @@ namespace router {
 	vector<vector<int>> InitializeGraph(vector<segment*> &segment_list, vector<Switch*> switches);
 	int* InitializeSegmentLabels(int num_segments);
 
-	void FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_list, int* segment_labels, LogicBlock* start_block, int start_pin, LogicBlock* end_block, int end_pin, int net_id);
+	bool FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_list, int* segment_labels, LogicBlock* start_block, int start_pin, LogicBlock* end_block, int end_pin, int net_id);
 	void ResetLabels(vector<segment*> seg_list, int* segment_labels);
 };
 

@@ -55,10 +55,55 @@ void LogicBlock::draw()
 
 	setcolor(BLACK);
 	setlinestyle(SOLID);
-	string coords = to_string(this->x_index) + " : " + to_string(this->y_index);
+	string coords = to_string(this->x_index + 1) + " : " + to_string(this->y_index + 1);
 	drawtext(x_offset + (LogicBlock::block_draw_width / 2), y_offset + (LogicBlock::block_draw_width / 2), coords.c_str(), INT_MAX);
 	setcolor(DARKGREY);
 	drawrect(x_offset, y_offset, x_offset + LogicBlock::block_draw_width, y_offset + LogicBlock::block_draw_width);
+
+	for (int i = 0; i < 4; i++) {
+		if (this->pin_nets[i] != -1) {
+			int seg_i;
+			segment* seg = NULL;
+			for (int j = 0; j < this->channels[i]->segments.size(); j++) {
+				segment* s = this->channels[i]->segments[j];
+				if (s->net == this->pin_nets[i]) {
+					seg_i = j;
+					seg = s;
+				}
+			}
+
+			int seg_offset = this->channels[i]->getSegmentOffset(seg_i);
+
+			setlinestyle(SOLID);
+			setlinewidth(SegChannel::s_width);
+			setcolor((seg->net % 7) + 4);
+
+			if (i == LogicBlock::UP) {
+				drawline(
+					x_offset + (LogicBlock::block_draw_width / 3), y_offset + LogicBlock::block_draw_width,
+					x_offset + (LogicBlock::block_draw_width / 3), y_offset + LogicBlock::block_draw_width + seg_offset
+				);
+			}
+			else if (i == LogicBlock::DOWN) {
+				drawline(
+					x_offset + (2 * LogicBlock::block_draw_width / 3), y_offset,
+					x_offset + (2 * LogicBlock::block_draw_width / 3), y_offset - LogicBlock::block_draw_width + seg_offset
+				);
+			}
+			else if (i == LogicBlock::RIGHT) {
+				drawline(
+					x_offset + LogicBlock::block_draw_width, y_offset + (2 * LogicBlock::block_draw_width / 3),
+					x_offset + LogicBlock::block_draw_width + seg_offset, y_offset + (2 * LogicBlock::block_draw_width / 3)
+				);
+			}
+			else if (i == LogicBlock::LEFT) {
+				drawline(
+					x_offset, y_offset + (LogicBlock::block_draw_width / 3),
+					x_offset - LogicBlock::block_draw_width + seg_offset, y_offset + (LogicBlock::block_draw_width / 3)
+				);
+			}
+		}
+	}
 }
 
 LogicBlock::~LogicBlock()

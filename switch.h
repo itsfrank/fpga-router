@@ -22,6 +22,8 @@ public:
 	static const int DOWN = 2;
 	static const int LEFT = 3;
 
+	static bool WILTON;
+
 	int x_index, y_index;
 
 	SegChannel** channels = new SegChannel*[4];
