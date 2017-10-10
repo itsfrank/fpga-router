@@ -44,7 +44,10 @@ int main() {
 	int c_width;
 	vector<net_t> nets;
 
-	fstream file("../test-circuits/cc2");
+	bool minimize_w = false;
+	Switch::WILTON = true;
+
+	fstream file("../test-circuits/cc3");
 
 	string line;
 
@@ -65,24 +68,69 @@ int main() {
 		nets.push_back({ lb1_x - 1, lb1_y - 1, lb1_pin, lb2_x - 1, lb2_y - 1, lb2_pin });
 	}
 
-	Switch::WILTON = true;
 
-	router::init(c_width);
-	blocks = router::InitializeObjects(l_block_dim);
-	block_list = router::BlockArrayToVector(blocks, l_block_dim);
-	channel_list = router::GenerateChannels(blocks, l_block_dim);
-	switch_list = router::GenerateSwitches(blocks, l_block_dim);
-	seg_adj_list = router::InitializeGraph(seg_list, switch_list);
-	segment_labels = router::InitializeSegmentLabels(seg_adj_list.size());
+	if (!minimize_w) {
+		
+		router::init(c_width);
+		blocks = router::InitializeObjects(l_block_dim);
+		block_list = router::BlockArrayToVector(blocks, l_block_dim);
+		channel_list = router::GenerateChannels(blocks, l_block_dim);
+		switch_list = router::GenerateSwitches(blocks, l_block_dim);
+		seg_adj_list = router::InitializeGraph(seg_list, switch_list);
+		segment_labels = router::InitializeSegmentLabels(seg_adj_list.size());
 
 
 
-	for (int i = 0; i < nets.size(); i++) {
-		net_t net = nets[i];
-		router::FindRoute(seg_adj_list, seg_list, segment_labels, blocks[net.lb1_x][net.lb1_y], net.lb1_pin, blocks[net.lb2_x][net.lb2_y], net.lb2_pin, i);
-		router::ResetLabels(seg_list, segment_labels);
+		for (int i = 0; i < nets.size(); i++) {
+			net_t net = nets[i];
+			router::FindRoute(seg_adj_list, seg_list, segment_labels, blocks[net.lb1_x][net.lb1_y], net.lb1_pin, blocks[net.lb2_x][net.lb2_y], net.lb2_pin, i);
+			router::ResetLabels(seg_list, segment_labels);
+		}
+	}
+	else {
+		c_width = 0;
+		bool success = false;
+
+		while (!success)
+		{
+			c_width++;
+			success = true;
+			printf("ATTEMPTING TO ROUTE WIDTH: %d ---------------\n", c_width);
+
+			delete blocks;
+			delete segment_labels;
+			block_list.clear();
+			channel_list.clear();
+			switch_list.clear();
+			seg_adj_list.clear();
+			seg_list.clear();
+
+			router::init(c_width);
+			blocks = router::InitializeObjects(l_block_dim);
+			block_list = router::BlockArrayToVector(blocks, l_block_dim);
+			channel_list = router::GenerateChannels(blocks, l_block_dim);
+			switch_list = router::GenerateSwitches(blocks, l_block_dim);
+			seg_adj_list = router::InitializeGraph(seg_list, switch_list);
+			segment_labels = router::InitializeSegmentLabels(seg_adj_list.size());
+
+
+
+			for (int i = 0; i < nets.size(); i++) {
+				net_t net = nets[i];
+				if (!router::FindRoute(seg_adj_list, seg_list, segment_labels, blocks[net.lb1_x][net.lb1_y], net.lb1_pin, blocks[net.lb2_x][net.lb2_y], net.lb2_pin, i)) {
+					success = false;
+					break;
+				}
+				router::ResetLabels(seg_list, segment_labels);
+			}
+
+		}
 	}
 
+	printf("REPORT -----------------------------------------------\n");
+	printf("Min Channel Width Routed: %d\n", c_width);
+	printf("Num Segments Used: %d\n", router::NumSegmentsUsed(seg_list));
+	
 	/* initialize display with WHITE background */
 
 	printf("About to start graphics.\n");
@@ -91,7 +139,7 @@ int main() {
 	/* still picture drawing allows user to zoom, etc. */
 	// Set-up coordinates from (xl,ytop) = (0,0) to 
 	// (xr,ybot) = (1000,1000)
-	init_world(-1 * LogicBlock::block_draw_width, 1000., 1000., -1 * LogicBlock::block_draw_width);
+	init_world(-1 * LogicBlock::block_draw_width, 5000, 5000, -1 * LogicBlock::block_draw_width);
 	update_message("Interactive graphics example.");
 
 	// Pass control to the window handling routine.  It will watch for user input
@@ -135,7 +183,7 @@ void drawscreen(void) {
 	}
 
 	for (auto sw : switch_list) {
-		sw->draw();
+		sw->draw(seg_adj_list);
 	}
 }
 

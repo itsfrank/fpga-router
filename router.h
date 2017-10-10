@@ -33,5 +33,6 @@ namespace router {
 
 	bool FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_list, int* segment_labels, LogicBlock* start_block, int start_pin, LogicBlock* end_block, int end_pin, int net_id);
 	void ResetLabels(vector<segment*> seg_list, int* segment_labels);
+	int NumSegmentsUsed(vector<segment*> seg_list);
 };
 

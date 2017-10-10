@@ -312,6 +312,7 @@ bool router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_li
 		int current_id = target_id;
 		while (segment_labels[current_id] > 0) {
 			segment* seg = seg_list[current_id];
+
 			seg->net = net_id;
 
 			int smallest_value = INT_MAX;
@@ -348,4 +349,15 @@ void router::ResetLabels(vector<segment*> seg_list, int * segment_labels)
 		if (seg_list[i]->net == -1) segment_labels[i] = router::AVAILABLE;
 		else segment_labels[i] = router::UNAVAILABLE;
 	}
+}
+
+int router::NumSegmentsUsed(vector<segment*> seg_list)
+{
+	int count = 0;
+
+	for (auto seg : seg_list) {
+		if (seg->net != -1) count++;
+	}
+	
+	return count;
 }

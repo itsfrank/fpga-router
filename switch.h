@@ -14,6 +14,8 @@ struct connection {
 	segment* b_ch;
 };
 
+using namespace std;
+
 class Switch
 {
 public:
@@ -32,7 +34,8 @@ public:
 	Switch(int x_index, int y_index, SegChannel* up, SegChannel* right, SegChannel* down, SegChannel* left);
 	std::vector<segment*> getSwitchSegments();
 
-	void draw();
+	void fixSwitch();
+	void draw(vector<vector<int>> seg_adj_list);
 
 	~Switch();
 };
