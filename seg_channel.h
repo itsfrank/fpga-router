@@ -43,7 +43,7 @@ public:
 	SegChannel(LogicBlock* l1, LogicBlock* l2, bool is_vertical);
 
 	void draw();
-
+	float getSegmentOffset(int i);
 	~SegChannel();
 
 private:

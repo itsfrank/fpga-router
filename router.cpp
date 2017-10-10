@@ -1,5 +1,4 @@
 #include "router.h"
-#include "router.h"
 
 using namespace std;
 
@@ -202,6 +201,7 @@ void router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_li
 	}
 
 	for (auto seg : end_block->channels[end_pin - 1]->segments) {
+		if (segment_labels[seg->g_index] == router::UNAVAILABLE) continue;
 		segment_labels[seg->g_index] = router::TARGET;
 		target_ids.push_back(seg->g_index);
 	}
@@ -240,6 +240,7 @@ void router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_li
 			seg->net = net_id;
 
 			for (auto neighbour : seg_adj_list[current_id]) {
+				if (segment_labels[neighbour] == router::UNAVAILABLE) continue;
 				if (segment_labels[neighbour] < segment_labels[current_id]) {
 					seg_list[current_id]->net = net_id;
 					current_id = neighbour;
@@ -250,4 +251,12 @@ void router::FindRoute(vector<vector<int>> seg_adj_list, vector<segment*> seg_li
 		seg_list[current_id]->net = net_id;
 	}
 
+}
+
+void router::ResetLabels(vector<segment*> seg_list, int * segment_labels)
+{
+	for (int i = 0; i < seg_list.size(); i++) {
+		if (seg_list[i]->net == -1) segment_labels[i] = router::AVAILABLE;
+		else segment_labels[i] = router::UNAVAILABLE;
+	}
 }

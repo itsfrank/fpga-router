@@ -32,6 +32,11 @@ void SegChannel::draw()
 	else this->drawH();
 }
 
+float SegChannel::getSegmentOffset(int i)
+{
+	return ((i + 1) * SegChannel::s_padding) + (i * SegChannel::s_width);
+}
+
 
 SegChannel::~SegChannel()
 {

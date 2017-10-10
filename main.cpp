@@ -7,10 +7,8 @@
 #include "switch.h"
 
 // Callbacks for event-driven window handling.
-void delay(void);
 int main();
 void drawscreen(void);
-void act_on_new_button_func(void(*drawscreen_ptr) (void));
 void act_on_button_press(float x, float y);
 void act_on_mouse_move(float x, float y);
 void act_on_key_press(char c);
@@ -32,8 +30,6 @@ static int* segment_labels;
 
 int main() {
 
-	int i;
-
 	int l_block_dim = 3;
 	int c_width = 3;
 
@@ -45,7 +41,8 @@ int main() {
 	seg_adj_list = router::InitializeGraph(seg_list, switch_list);
 	segment_labels = router::InitializeSegmentLabels(seg_adj_list.size());
 	router::FindRoute(seg_adj_list, seg_list, segment_labels, blocks[0][0], 1, blocks[2][2], 1, 0);
-
+	router::ResetLabels(seg_list, segment_labels);
+	router::FindRoute(seg_adj_list, seg_list, segment_labels, blocks[0][0], 2, blocks[2][2], 1, 1);
 	/* initialize display with WHITE background */
 
 	printf("About to start graphics.\n");
@@ -63,36 +60,6 @@ int main() {
 	// four callbacks below.  mouse movement and key press (keyboard) events aren't 
 	// enabled by default, so they aren't on yet.
 	event_loop(act_on_button_press, NULL, NULL, drawscreen);
-
-	/* animation section */
-	clearscreen();
-	update_message("Non-interactive (animation) graphics example.");
-	setcolor(RED);
-	setlinewidth(1);
-	setlinestyle(DASHED);
-	init_world(0., 0., 1000., 1000.);
-	for (i = 0; i<50; i++) {
-		drawline((float)i, (float)(10.*i), (float)(i + 500.), (float)(10.*i + 10.));
-		flushinput();
-		delay();
-	}
-
-	/* Draw an interactive still picture again.  I'm also creating one new button. */
-
-	init_world(0., 0., 1000., 1000.);
-	update_message("Interactive graphics #2. Click in graphics area to rubber band line.");
-	create_button("Window", "0 Clicks", act_on_new_button_func);
-
-	// Enable mouse movement (not just button presses) and key board input.
-	// The appropriate callbacks will be called by event_loop.
-	set_keypress_input(true);
-	set_mouse_move_input(true);
-	line_entering_demo = true;
-
-	// draw the screen once before calling event loop, so the picture is correct 
-	// before we get user input.
-	drawscreen();
-	event_loop(act_on_button_press, act_on_mouse_move, act_on_key_press, drawscreen);
 
 	close_graphics();
 	printf("Graphics closed down.\n");
@@ -131,33 +98,6 @@ void drawscreen(void) {
 	}
 }
 
-
-void delay(void) {
-
-	/* A simple delay routine for animation. */
-
-	int i, j, k, sum;
-
-	sum = 0;
-	for (i = 0; i<100; i++)
-		for (j = 0; j<i; j++)
-			for (k = 0; k<1000; k++)
-				sum = sum + i + j - k;
-}
-
-
-void act_on_new_button_func(void(*drawscreen_ptr) (void)) {
-
-	char old_button_name[200], new_button_name[200];
-	printf("You pressed the new button!\n");
-	setcolor(MAGENTA);
-	setfontsize(12);
-	drawtext(500., 500., "You pressed the new button!", 10000.);
-	printf(old_button_name, "%d Clicks", num_new_button_clicks);
-	num_new_button_clicks++;
-	printf(new_button_name, "%d Clicks", num_new_button_clicks);
-	change_button_text(old_button_name, new_button_name);
-}
 
 
 void act_on_button_press(float x, float y) {
